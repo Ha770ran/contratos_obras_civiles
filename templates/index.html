@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato Obra Civil</title>
+</head>
+<body>
+    <h1>Crear nuevo contrato</h1>
+    <form action="/create" method="post">
+        <label for="contract_number">Número de Contrato:</label>
+        <input type="text" id="contract_number" name="contract_number" required><br><br>
+        
+        <label for="contract_date">Fecha del Contrato:</label>
+        <input type="text" id="contract_date" name="contract_date" required><br><br>
+
+        <label for="employer_name">Nombre del Contratante:</label>
+        <input type="text" id="employer_name" name="employer_name" required><br><br>
+
+        <label for="employer_nit">Contratante NIT:</label>
+        <input type="text" id="employer_nit" name="employer_nit" required><br><br>
+
+        <label for="legal_representative">Nombre Representante Legal Contratante:</label>
+        <input type="text" id="legal_representative" name="legal_representative" required><br><br>
+
+        <label for="legal_representative_id">Representante Legal Contratante Numero CC:</label>
+        <input type="text" id="legal_representative_id" name="legal_representative_id" required><br><br>
+
+        <label for="employer_address">Dirección del Contratante:</label>
+        <input type="text" id="employer_address" name="employer_address" required><br><br>
+
+        <label for="contractor_name">Nombre del Contratista:</label>
+        <input type="text" id="contractor_name" name="contractor_name" required><br><br>
+        
+        <label for="contractor_id">Nit del Contratista:</label>
+        <input type="text" id="contractor_id" name="contractor_id" required><br><br>
+        
+        <label for="legal_representative_contractor">Representante legal del Contratista:</label>
+        <input type="text" id="legal_representative_contractor" name="legal_representative_contractor" required><br><br>
+        
+        <label for="legal_representative_contractor_id">ID del Representante Legal del Contratista:</label>
+        <input type="text" id="legal_representative_contractor_id" name="legal_representative_contractor_id" required><br><br>
+        
+        <label for="contractor_address">Direcciòn del Contratista:</label>
+        <input type="text" id="contractor_address" name="contractor_address" required><br><br>
+
+        <label for="contractor_phone">Teléfono del Contratista:</label>
+        <input type="tel" id="contractor_phone" name="contractor_phone" required><br><br>
+    
+        <label for="contractor_email">Email del Contratista:</label>
+        <input type="email" id="contractor_email" name="contractor_email" required><br><br>
+    
+        <label for="contract_object">Objeto del Contrato:</label>
+        <input type="text" id="contract_object" name="contract_object" required><br><br>
+    
+        <label for="project_name">Nombre del Proyecto:</label>
+        <input type="text" id="project_name" name="project_name" required><br><br>
+    
+        <label for="project_city">Ciudad del Proyecto:</label>
+        <input type="text" id="project_city" name="project_city" required><br><br>
+    
+        <label for="value">Valor del Contrato:</label>
+        <input type="number" id="value" name="value" required><br><br>
+    
+        <label for="payment_frequency">Frecuencia de Pago:</label>
+        <input type="text" id="payment_frequency" name="payment_frequency" required><br><br>
+    
+        <label for="contract_time">Duración del Contrato:</label>
+        <input type="text" id="contract_time" name="contract_time" required><br><br>
+    
+        <label for="warranties_cum">Poliza Cumplimiento:</label>
+        <input type="text" id="warranties_cum" name="warranties_cum" required><br><br>
+
+        <label for="warranties_ant">Poliza Anticipo:</label>
+        <input type="text" id="warranties_ant" name="warranties_ant" required><br><br>
+
+        <label for="warranties_amp_sal">Poliza Amparo salario y prestaciones sociales:</label>
+        <input type="text" id="warranties_amp_sal" name="warranties_amp_sal" required><br><br>
+
+        <label for="warranties_rce">Poliza Responsabilidad Civil Extracontractual:</label>
+        <input type="text" id="warranties_rce" name="warranties_rce" required><br><br>
+
+        <label for="warranties_cal">Poliza Calidad y correcto funcionamiento:</label>
+        <input type="text" id="warranties_cal" name="warranties_cal" required><br><br>
+
+        <label for="warranties_other">Otra Poliza:</label>
+        <input type="text" id="warranties_other" name="warranties_other" required><br><br>
+    
+        <label for="advance_value">Valor del Anticipo:</label>
+        <input type="number" id="advance_value" name="advance_value" required><br><br>
+    
+        <label for="offer">Oferta:</label>
+        <input type="text" id="offer" name="offer" required><br><br>
+    
+        <label for="special_observations">Observaciones Especiales:</label>
+        <input type="text" id="special_observations" name="special_observations"><br><br>
+        
+        <button type="submit">Create Contract</button>
+    </form>
+</body>
+</html>
