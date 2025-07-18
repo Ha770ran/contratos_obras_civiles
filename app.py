@@ -9,6 +9,8 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
+import pandas as pd
+import os
 
 
 
@@ -56,6 +58,61 @@ class Contract(db.Model):
 with app.app_context():
     db.create_all()
 
+#Ingreso tabla excel de contratos
+
+EXCEL_FILE = "contracts.xlsx"
+
+def update_excel():
+    # Obtener todos los contratos desde la base de datos
+    with app.app_context():
+        contracts = Contract.query.all()
+
+    # Crear lista de datos para el DataFrame
+    data = [
+        {
+            "Número de Contrato:": contract.contract_number,
+            "Fecha del Contrato:": contract.contract_date, 
+            "Nombre del Contratante:": contract.employer_name,
+            "Contratante NIT:": contract.employer_nit,
+            "Nombre Rep. Legal Contratante:": contract.legal_representative, 
+            "Rep. Legal Contratante No. C.C.:": contract.legal_representative_id,
+            "Dirección del Contratante:": contract.employer_address,
+            "Nombre del Contratista:": contract.contractor_name, 
+            "NIT del Contratista:": contract.contractor_id, 
+            "Rep. Legal del Contratista:": contract.legal_representative_contractor, 
+            "Rep. Legal Contratista No. C.C.:":contract.legal_representative_contractor_id,
+            "Dirección del Contratista:": contract.contractor_address,
+            "Teléfono del Contratista:": contract.contractor_phone,
+            "Email del Contratista:": contract.contractor_email, 
+            "Objeto del Contrato:": contract.contract_object,
+            "Nombre del Proyecto:": contract.project_name,
+            "Ciudad del Proyecto:": contract.project_city, 
+            "Valor del Contrato:": contract.value, 
+            "Frecuencia de Pago:": contract.payment_frequency,
+            "Duración del Contrato:": contract.contract_time, 
+            "Poliza Cumplimiento:": contract.warranties_cum, 
+            "Poliza Anticipo:": contract.warranties_ant, 
+            "Amparo, salario y prestaciones soc.:": contract.warranties_amp_sal, 
+            "Poliza RCE:": contract.warranties_rce,
+            "Poliza calidad y correcto fun.:": contract.warranties_cal, 
+            "Otra Poliza:": contract.warranties_other, 
+            "Valor del Anticipo:": contract.advance_value, 
+            "Oferta:": contract.offer, 
+            "Observaciones Especiales:": contract.special_observations, 
+        }
+        for contract in contracts
+    ]
+
+    # Crear un DataFrame con los datos
+    df = pd.DataFrame(data)
+
+    # Guardar en un archivo Excel
+    df.to_excel(EXCEL_FILE, index=False, engine='openpyxl')
+
+    print(f"📂 Archivo Excel actualizado: {EXCEL_FILE}")
+ 
+ # FINALIZA TABLA EXCEL ACTUALIZADA.
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -91,12 +148,16 @@ def create():
         warranties_other=request.form['warranties_other'],
         advance_value=request.form['advance_value'],
         offer=request.form['offer'],
-        special_observations=request.form.get('special_observations', '')
+        special_observations=request.form['special_observations']
     )
     db.session.add(new_contract)
     db.session.commit()
 
+    #Genera PDF
     generate_pdf(new_contract)
+
+    #Actualizar el cuadro excel:
+    update_excel()
 
     return redirect(url_for('index'))
 
@@ -197,15 +258,14 @@ def generate_pdf(contract):
     paragraph_style = styles['BodyText']
     paragraph_style.alignment = 4  # Justificación completa
 
-    # Texto del párrafo
+    # Texto del párrafo introduccion
     additional_text = (
-    "Las partes identificadas en el presente contrato de obra civil deciden libre y voluntariamente "
-    "pactar y cumplir las siguientes clausulas contractuales que se regirán por las normas civiles y "
-    "comerciales colombianas."
+    "Las partes identificadas en el presente contrato deciden libre y voluntariamente pactar y cumplir "
+    "las siguientes clausulas que se regirán por las normas civiles y comerciales colombianas. "
 
     )
 
-    # Crear el párrafo
+    # Crear el párrafo introduccion
     paragraph = Paragraph(additional_text, paragraph_style)
 
     # Ajustar la posición del párrafo en el PDF
@@ -222,7 +282,7 @@ def generate_pdf(contract):
     # Incrementar el número de página
     page_number += 1
 
-    # Determinar la forma y presentación para los parrafos de las páginas adicionales que estan en las paginas 1,2,3
+    # Determinar la forma y presentación para las clausulas de las páginas adicionales que estan en las paginas 1,2,3
     styles = getSampleStyleSheet()
     paragraph_style = styles['BodyText']
     paragraph_style.alignment = 4  # Justificación completa
@@ -238,7 +298,7 @@ def generate_pdf(contract):
         "CONTRATISTA no tendrá derecho a facturarlas o reclamarlas.\n"
 
         "<b>PARÁGRAFO SEGUNDO</b>: El CONTRATISTA suministrará todos los materiales, herramientas y elementos "
-        "necesarios para la ejecución de este contrato\n. "
+        "necesarios para la ejecución de este contrato.\n "
 
         "<b>SEGUNDA. DURACIÓN DEL CONTRATO</b>: El plazo de ejecución del contrato es el establecido en la información "
         "general del presente documento, dando inicio en la fecha establecida o mediante orden de inicio emitida por "
@@ -331,14 +391,14 @@ def generate_pdf(contract):
         "CONTRATANTE previo inicio de la labor. 9.: A responder ante terceros por los daños comprobados que ocasione el personal a su cargo."
         "10.: A cumplir con todas las obligaciones de carácter tributario que se desprenden de la naturaleza del contrato. 11.: A informar " 
         "pronta y oportunamente a EL CONTRATANTE de cualquier hecho o circunstancia anormal que observe, con el fin de evitar perjuicios, para" 
-        "lo cual deberá presentar un informe detallado por escrito. 12.: Entregar los manuales de funcionamiento o mantenimiento para el usuario" 
+        "lo cual deberá presentar un informe detallado por escrito. 12.: Entregar los manuales de funcionamiento o mantenimiento para el usuario " 
         "de la propiedad, fichas técnicas de los elementos, partes, equipos que hacen parte del desarrollo de la obra civil ejecutada. "
         "13.: Otorgar garantía de calidad, idoneidad y buen funcionamiento de los bienes o productos utilizados en la obra y garantía de " 
         "estabilidad de la misma, si corresponde conforme a la naturaleza del contrato, en los términos indicados y prescritos en el artículo" 
         "2060 del Código Civil. 14.: En caso que se presente, invertir correctamente y/o garantizar el buen manejo del anticipo. 15. A atender " 
         "las reclamaciones que le haga EL CONTRATANTE en un termino mayor de 2 dias habiles respecto al presente contrato 16.: A cumplir con " 
         "todas las obligaciones laborales, y parafiscales de sus propios trabajadores."
-        "17.: En cumplir con toda la normatividad colombiana relacionada con la seguridad y salud en el trabajo, y en atender los requerimientos"  
+        "17.: En cumplir con toda la normatividad colombiana relacionada con la seguridad y salud en el trabajo, y en atender los requerimientos "  
         "y recomendaciones que le brinde el contratante respecto a este tema. 18.: A liquidar el Contrato en el tiempo debido. 19.: Dar " 
         "cumplimiento a todas las normas legales, convencionales y reglamentarias, teniendo en cuenta que sus relaciones laborales se rigen por " 
         "lo dispuesto en el código sustantivo de trabajo y en las demás disposiciones concordantes y complementarias, siendo a cargo exclusivo " 
@@ -354,14 +414,14 @@ def generate_pdf(contract):
         "obligaciones determinadas por la ley.\n"
 
         "<b>QUINTA. OBLIGACIONES DEL CONTRATANTE</b>: Son obligaciones especiales del CONTRATANTE:"
-        "a): Suministrar a tiempo toda la información que EL CONTRATISTA requiera para el normal desarrollo de su trabajo. b): Definir y resolver todos"  
+        " a): Suministrar a tiempo toda la información que EL CONTRATISTA requiera para el normal desarrollo de su trabajo. b): Definir y resolver todos "  
         "los problemas que se presenten dentro de la obra en relación al objeto del contrato. c): Cumplir con todas las obligaciones que le impone el " 
-        "presente contrato, en especial atender el pago oportuno por concepto de obra ejecutada. d): Las demás oblgaciones determinadas por la ley.\n"
+        "presente contrato, en especial atender el pago oportuno por concepto de obra ejecutada. d): Las demás obligaciones determinadas por la ley.\n"
 
         "<b>SEXTA. RETENCIONES</b>: El CONTRATISTA autoriza al CONTRATANTE a retener el 10% del valor del contrato que será aplicado en las facturas " 
         "o cuentas de cobro presentadas por el CONTRATISTA. El CONTRATANTE podrá disponer del retenido por la ocurrencia de uno de los siguientes " 
         "eventos: 1) Cuando EL CONTRATISTA no cumpla con su objeto contractual y condiciones del contrato, por hechos imputables al contratista. " 
-        "2) Cuando EL CONTRATISTA o sus dependientes hayan causado un daño o perjuicio al CONTRATANTE por hechos imputable al contratista. 3) Cuando"  
+        "2) Cuando EL CONTRATISTA o sus dependientes hayan causado un daño o perjuicio al CONTRATANTE por hechos imputable al contratista. 3) Cuando "  
         "EL CONTRATISTA no haya suscrito las pólizas requeridas en el presente contrato. 4). Cuando por Ley deba hacerse Retención.\n" 
 
         "<b>PARÁGRAFO PRIMERO</b>: Igualmente las autorizaciones de retención serán hasta por las sumas que llegue a adeudar EL CONTRATISTA a sus dependientes, " 
@@ -374,7 +434,7 @@ def generate_pdf(contract):
         "2.: Por mutuo acuerdo de las partes, el cual deberá constar por escrito. "
         "3.: Por resolución o terminación, según el caso, sin perjuicio de la responsabilidad e indemnización de perjuicios a que haya lugar, según " 
         "las reglas generales y las especiales. "
-        "4.: Por desición unilateral del contratante, previa notificación al contratista por escrito com 3 dias hábiles de anticipación, donde se " 
+        "4.: Por decisión unilateral del contratante, previa notificación al contratista por escrito con 3 días hábiles de anticipación, donde se " 
         "pagará lo realmente ejecutado hasta la fecha."
         "5.: Por el vencimiento del plazo, que es la preclusión de la oportunidad expresa o tácita para su respectiva ejecución a menos que las " 
         "partes acuerden continuar con la ejecución. "
@@ -402,7 +462,7 @@ def generate_pdf(contract):
  
     additional_text_3 = (
     "6.: Por la inejecución, ejecución tardía, defectuosa o por el incumplimiento por cualquiera de las partes de las obligaciones contraídas " 
-    "en el presente contrato, sin perjuicio de la responsabilidad e indemnización de perjuicios a que haya lugar, según las reglas generales y" 
+    "en el presente contrato, sin perjuicio de la responsabilidad e indemnización de perjuicios a que haya lugar, según las reglas generales y " 
     "las especiales. "
     "7.: Por la cesación de pagos, concurso de acreedores, insolvencia o embargos judiciales de cualquiera de las partes que afecten el cumplimiento " 
     "de las obligaciones adquiridas en los términos del presente contrato, sin perjuicio de la responsabilidad e indemnización de perjuicios a que " 
@@ -415,7 +475,7 @@ def generate_pdf(contract):
     "de Seguridad Social en Salud, Pensiones y FIC. "
     "13.: Las demás que determine la Ley.\n"
 
-    "<b>OCTAVA. SUPERVISIÓN DEL CONTRATO</b>: EL CONTRATANTE, sus representantes o delegados para el efecto, supervisarán la ejecución del servicio" 
+    "<b>OCTAVA. SUPERVISIÓN DEL CONTRATO</b>: EL CONTRATANTE, sus representantes o delegados para el efecto, supervisarán la ejecución del servicio " 
     "encargado, y podrá formular las observaciones del caso con el fin de ser analizadas conjuntamente con EL CONTRATISTA y efectuar por parte de " 
     "éste las modificaciones o correcciones a que hubiera lugar.\n"
 
@@ -446,7 +506,7 @@ def generate_pdf(contract):
     "Será por su cuenta el cumplimiento de todas las obligaciones por concepto de salarios y prestaciones sociales con fundamento en las normas legales "
     "vigentes, así como las prestaciones extra legales que tenga establecidas o establezca con sus trabajadores en pactos o convenciones colectivas.\n"
 
-    "<b>PARÁGRAFO SEGUNDO</b>: EL CONTRATISTA suministrará a sus trabajadores los equipos de protección personal e implementos necesarios para la ejecución"  
+    "<b>PARÁGRAFO SEGUNDO</b>: EL CONTRATISTA suministrará a sus trabajadores los equipos de protección personal e implementos necesarios para la ejecución "  
     "de las labores y tomará las medidas para mantener en la obra la higiene y la seguridad en el trabajo, de conformidad a las normas legales que regulan " 
     "la materia, incluyendo el orden y el aseo de los sitios de trabajo. De igual forma debe asegurar que sus trabajadores usen correctamente los elementos " 
     "de protección personal y demás dispositivos para la prevención y control de los riesgos laborales.\n"
@@ -490,9 +550,9 @@ def generate_pdf(contract):
 
     additional_text_4 = (
     "<b>DÉCIMA CUARTA. INDEMNIDAD</b>: EL CONTRATISTA actuará por su propia cuenta, con absoluta autonomía e independencia, y no estará sometido a " 
-    "subordinación laboral con EL CONTRATANTE y sus derechos se limitarán, de acuerdo con la naturaleza del contrato, a exigir el cumplimiento de las" 
-    "obligaciones en el contrato y al pago de los honorarios estipulados, de igual forma sus obligaciones se circunscriben a la prestación del servicio" 
-    "para el cual fue contratado. En consecuencia, EL CONTRATISTA mantendrá indemne al CONTRATANTE de los requerimientos judiciales y extrajudiciales que"  
+    "subordinación laboral con EL CONTRATANTE y sus derechos se limitarán, de acuerdo con la naturaleza del contrato, a exigir el cumplimiento de las " 
+    "obligaciones en el contrato y al pago de los honorarios estipulados, de igual forma sus obligaciones se circunscriben a la prestación del servicio " 
+    "para el cual fue contratado. En consecuencia, EL CONTRATISTA mantendrá indemne al CONTRATANTE de los requerimientos judiciales y extrajudiciales que "  
     "invoquen los trabajadores y el personal a cargo del CONTRATISTA como resultado del incumplimiento de sus obligaciones. Cualquier costo en que incurra " 
     "EL CONTRATANTE para la defensa de sus intereses o suma que deba cancelar como consecuencia de las situaciones planteadas en este contrato o por " 
     "cualquier otra derivada del incumplimiento de las obligaciones del CONTRATISTA, deberá ser reintegrado en su totalidad al CONTRATANTE debidamente " 
@@ -501,12 +561,12 @@ def generate_pdf(contract):
     "<b>DÉCIMA QUINTA. CALIDAD DE LOS SERVICIOS</b>: EL CONTRATISTA asume toda responsabilidad ante el CONTRATANTE por la calidad, cantidad y oportunidad de"  
     "los trabajos ejecutados objeto del presente Contrato, cuya calidad mínimo será la establecida en el Estatuto del Consumidor para estos casos.\n"
 
-    "<b>DÉCIMA SEXTA. CESIÓN Y SUBCONTRATACIÓN</b>: EL CONTRATISTA no podrá ceder la ejecución del objeto del presente contrato sin autorización previa y escrita" 
-    "del CONTRATANTE. El incumplimiento de esta obligación facultará al CONTRATANTE para dar por terminado el presente contrato, sin que por este hecho se genere" 
+    "<b>DÉCIMA SEXTA. CESIÓN Y SUBCONTRATACIÓN</b>: EL CONTRATISTA no podrá ceder la ejecución del objeto del presente contrato sin autorización previa y escrita " 
+    "del CONTRATANTE. El incumplimiento de esta obligación facultará al CONTRATANTE para dar por terminado el presente contrato, sin que por este hecho se genere " 
     "alguna indemnización por parte del CONTRATANTE a favor del CONTRATISTA.\n"
 
-    "<b>PARÁGRAFO PRIMERO</b>: El CONTRATISTA sólo podrá subcontratar todo aquello que no implique la ejecución de todo el objeto del presente contrato. En caso"  
-    "que el CONTRATANTE permitiera por escrito celebrar subcontratos, quedará entendido que ninguno de los subcontratistas ni del personal empleado por éstos" 
+    "<b>PARÁGRAFO PRIMERO</b>: El CONTRATISTA sólo podrá subcontratar todo aquello que no implique la ejecución de todo el objeto del presente contrato. En caso "  
+    "que el CONTRATANTE permitiera por escrito celebrar subcontratos, quedará entendido que ninguno de los subcontratistas ni del personal empleado por éstos " 
     "podrá considerarse como empleados de EL CONTRATANTE y no tendrá nexos ni responsabilidad laboral alguna con ellos.\n"
 
     "<b>PARÁGRAFO SEGUNDO</b>: El CONTRATISTA se obliga a exigirle al subcontratista el cumplimiento de todas las mismas obligaciones a cargo del CONTRATISTA " 
@@ -517,11 +577,11 @@ def generate_pdf(contract):
     "sobre especificaciones técnicas o de calidad pactadas en el contrato, o incumplimientos en cualquier otra obligación establecida en el mismo, el "
     "CONTRATANTE procederá a requerirlo para que dentro de los tres (3) días siguientes al recibo del requerimiento a la dirección suministrada en el contrato, " 
     "proceda a cumplir con las obligaciones que le corresponden. 2. Cuando no sea satisfecho el requerimiento del numeral anterior o se presenten por segunda vez "
-    "retardos o incumplimientos en las obligaciones y/o especificaciones del contrato por parte del CONTRATISTA, se configurará un incumplimiento grave del contrato"  
+    "retardos o incumplimientos en las obligaciones y/o especificaciones del contrato por parte del CONTRATISTA, se configurará un incumplimiento grave del contrato "  
     "que facultará al CONTRATANTE, una vez se informe por escrito al CONTRATISTA, a nombrar un tercero que ejecute parcial o totalmente las obligaciones contraídas, " 
     "cuyo costo será asumido por el CONTRATISTA incumplido, y la aseguradora será garante. 3. Una vez configurado el incumplimiento grave, el CONTRATANTE estará " 
     "facultado para declarar la terminación anticipada y unilateral mediante escrito remitido al correo electrónico del CONTRATISTA o por otro medio, enviándole la " 
-    "liquidación unilateral del mismo y sin que se genere indemnización de ningún tipo a favor del CONTRATISTA. 4. Durante la liquidación unilateral del contrato por" 
+    "liquidación unilateral del mismo y sin que se genere indemnización de ningún tipo a favor del CONTRATISTA. 4. Durante la liquidación unilateral del contrato por " 
     "parte del CONTRATANTE, este último, podrá aplicar los descuentos, deudas, daños y compensaciones correspondientes de las sumas que adeude al CONTRATISTA.\n"
 
     "<b>PARÁGRAFO PRIMERO</b>: El incumplimiento del contrato, aunque no dé lugar a la terminación, obligará al CONTRATISTA, en todo caso, al resarcimiento de los " 
@@ -531,10 +591,10 @@ def generate_pdf(contract):
     "<b>DÉCIMA OCTAVA. MULTAS</b>: El CONTRATANTE, aplicará multas diarias hasta del uno por ciento (1%) del valor total del contrato hasta llegar a un monto máximo " 
     "del diez 10% del valor del contrato, en los siguientes eventos: 1. Incumplimiento de las obligaciones estipuladas en el contrato o en sus anexos y de las "
     "obligaciones laborales a su cargo, conforme lo establece el numeral primero de la cláusula anterior. 2. Incumplimiento en el término para liquidar el contrato o "  
-    "por no allegar los documentos requeridos para tal fin. 3. El incumplimiento de las normas de seguridad y salud en el trabajo, riesgos laborales, salud ocupacional"  
+    "por no allegar los documentos requeridos para tal fin. 3. El incumplimiento de las normas de seguridad y salud en el trabajo, riesgos laborales, salud ocupacional "  
     "y normas medioambientales frente a sus trabajadores.\n"
 
-    "<b>PARÁGRAFO PRIMERO</b>: Las multas se causarán sin que sea necesario reconvenirlo para constituirlo en mora. Se aplicará una multa diaria hasta que el CONTRATISTA" 
+    "<b>PARÁGRAFO PRIMERO</b>: Las multas se causarán sin que sea necesario reconvenirlo para constituirlo en mora. Se aplicará una multa diaria hasta que el CONTRATISTA " 
     "cese la conducta que dio origen a la multa. El CONTRATISTA acepta que el CONTRATANTE descuente el valor de las multas consagradas en la presente cláusula de las " 
     "sumas que le adeude al CONTRATISTA, en virtud del presente contrato o de cualquier otro que se haya suscrito entre las partes. El pago de las multas aquí pactadas " 
     "no indemniza los perjuicios sufridos por EL CONTRATANTE ni limita en nada las posibilidades de reclamación de esta última por los daños padecidos.\n"
@@ -562,8 +622,8 @@ def generate_pdf(contract):
  
     additional_text_5 = (
     "<b>DÉCIMA NOVENA. GARANTIA</b>: En caso que en el informe general del presente contrato, se solicite al CONTRATISTA constituir pólizas a favor del CONTRATANTE, el " 
-    "CONTRATISTA se compromete a: 1. Constituir las pólizas exigidas en la información general del presente contrato con una compañía de seguros legalmente autorizada para" 
-    "funcionar en Colombia bajo la matriz de Grandes Beneficiarios y aceptada por EL CONTRATANTE con su respectivo recibo de paz y salvo, las pólizas se deberán diligenciarse" 
+    "CONTRATISTA se compromete a: 1. Constituir las pólizas exigidas en la información general del presente contrato con una compañía de seguros legalmente autorizada para " 
+    "funcionar en Colombia bajo la matriz de Grandes Beneficiarios y aceptada por EL CONTRATANTE con su respectivo recibo de paz y salvo, las pólizas se deberán diligenciarse " 
     "y emitirse con la Agencia Blin Seguros Ltda. 2. Para la Garantía de Responsabilidad Civil deberá tener subamparos como: RC cruzada, Patronal, Vehículos propios y no "
     "propios, Contratistas y subcontratistas, Daño emergente y lucro cesante. 3. Para la emisión de las pólizas, el CONTRATISTA deberá diligenciar las pólizas a través de la "
     "agencia Seguros BLIN SEGUROS LTDA, y expedirá las mismas bajo la mitigación de riesgos del CONTRATANTE de Grandes Beneficiarios. 4. Para la emisión de las pólizas, el " 
@@ -578,7 +638,7 @@ def generate_pdf(contract):
     "- Record de obras.\n"
     "La persona de contacto es: <b>Ansorena Orjuela Arango</b>: gerenciagenerales@blinseguros.com, Celular: 3108918342, y <b>Claudia Mejía</b>: "
     "gerenciaadministrativa@blinseguros.com, Celular: 301 589 2626, <b>PARÁGRAFO PRIMERO</b>: Las anteriores garantías están sujetas a la aprobación del CONTRATANTE y se "
-    "solicitará a la compañía de seguros respectiva que los plazos de vigencia se desplacen, para su inicio, desde la fecha de recibo a satisfacción o desde la culminación" 
+    "solicitará a la compañía de seguros respectiva que los plazos de vigencia se desplacen, para su inicio, desde la fecha de recibo a satisfacción o desde la culminación " 
     "de los trabajos según lo exigido en esta cláusula.\n"
 
     "<b>PARÁGRAFO SEGUNDO</b>: Será responsabilidad del CONTRATISTA el ampliar y ajustar las garantías en caso de alguna modificación al contrato y dar el aviso respectivo a la "
@@ -595,11 +655,11 @@ def generate_pdf(contract):
 
     "<b>PARÁGRAFO PRIMERO</b>: Será responsabilidad de las partes cualquier cambio de dirección que no sea oportunamente notificado al otro contratante.<para>"
 
-    "<b>VIGÉSIMA SEGUNDA. CONFIDENCIALIDAD</b>: EL CONTRATISTA, en virtud de la suscripción del presente contrato, se compromete a llevar a cabo las tareas asignadas de acuerdo" 
+    "<b>VIGÉSIMA SEGUNDA. CONFIDENCIALIDAD</b>: EL CONTRATISTA, en virtud de la suscripción del presente contrato, se compromete a llevar a cabo las tareas asignadas de acuerdo " 
     "con los más altos estándares de confidencialidad y competencia ética e integridad profesional. EL CONTRATISTA también se compromete a no revelar directa o indirectamente a "
     "ninguna persona, ni durante la vigencia del contrato, ni después de su terminación, ninguna información que hubiera obtenido durante la ejecución del mismo y que no sea de "     
     "dominio público, excepto con el permiso explícito y por escrito del CONTRATANTE. EL CONTRATISTA deberá tratar los detalles del contrato como privados y confidenciales, " 
-    "excepto en la medida que le sea necesario para cumplir sus obligaciones contractuales o para cumplir con las leyes aplicables. EL CONTRATISTA no deberá publicar, ni permitir" 
+    "excepto en la medida que le sea necesario para cumplir sus obligaciones contractuales o para cumplir con las leyes aplicables. EL CONTRATISTA no deberá publicar, ni permitir " 
     "que se publique, ni divulgue ningún detalle de los trabajos, documento técnico, conocimiento del ramo, ni ningún otro detalle sin antes contar con el previo consentimiento " 
     "del CONTRATANTE.<para>"
 
@@ -669,7 +729,7 @@ def generate_pdf(contract):
     "<b>VIGÉSIMA OCTAVA. MÉRITO EJECUTIVO</b>: El presente contrato prestará mérito ejecutivo para cualquiera de las partes, por contener obligaciones claras, expresas y " 
     "exigibles, sin que sea necesario para su exigibilidad el requerimiento previo o constitución en mora.<para>"
 
-    "<b>VIGÉSIMA NOVENA. INVALIDEZ DE ACUERDOS ANTERIORES</b>: Las partes manifiestan que no reconocerán validez a estipulaciones anteriores, verbales o escritas, relacionadas" 
+    "<b>VIGÉSIMA NOVENA. INVALIDEZ DE ACUERDOS ANTERIORES</b>: Las partes manifiestan que no reconocerán validez a estipulaciones anteriores, verbales o escritas, relacionadas " 
     "con el presente contrato, por cuanto aquí se consigna el acuerdo completo y total. De ahí que acuerdan dejar sin efecto alguno cualquier otro contrato verbal o escrito " 
     "celebrado con anterioridad entre EL CONTRATANTE y EL CONTRATISTA.<para>"
 
